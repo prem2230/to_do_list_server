@@ -1,17 +1,13 @@
 import Task from "../models/task.model.js";
+import { handleMongoError } from "../utils/index.js";
 
 const addTask = async (req, res) => {
     try {
         const { name, completed } = req.body;
-        if (!name) {
-            return res.status(400).json({
-                success: false,
-                message: "Please provide a task name"
-            })
-        }
+
         const task = new Task({
-            name,
-            completed
+            name: name?.trim(),
+            completed: completed || false
         })
         await task.save();
 
@@ -22,16 +18,22 @@ const addTask = async (req, res) => {
         })
 
     } catch (error) {
-        res.status(500).json({
+        const { status, message } = handleMongoError(error);
+        res.status(status).json({
             success: false,
-            message: error.message
+            message: message
         })
     }
 }
 
 const getTasks = async (req,res) =>{
     try{
-        const tasks = await Task.find();
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const tasks = await Task.find().skip(skip).limit(limit).sort({ createdAt: -1 });
+        const total = await Task.countDocuments();
 
         if(tasks.length === 0){
             return res.status(404).json({
@@ -43,14 +45,22 @@ const getTasks = async (req,res) =>{
         res.status(200).json({
             success:true,
             message:"Tasks fetched successfully",
-            count:tasks.length,
-            data:tasks
+            data:tasks,
+            count:total,
+            pagination:{
+                currentPage: page,
+                totalPages: Math.ceil(total / limit),
+                totalTasks: total,
+                hasNext: page < Math.ceil(total / limit),
+                hasPrev: page > 1
+            }
         });
 
     }catch(error){
-        res.status(500).json({
+        const { status, message } = handleMongoError(error);
+        res.status(status).json({
             success:false,
-            message:error.message
+            message:message
         })
     }
 }
@@ -58,7 +68,6 @@ const getTasks = async (req,res) =>{
 const getTask = async(req,res) =>{
     try{
         const {id} = req.params;
-
         const task = await Task.findById(id);
 
         if(!task){
@@ -75,9 +84,10 @@ const getTask = async(req,res) =>{
         })
 
     }catch(error){
-        res.status(500).json({
+        const { status, message } = handleMongoError(error);
+        res.status(status).json({
             success:false,
-            message:error.message
+            message:message
         })
     }
 }
@@ -102,9 +112,10 @@ const updateTask = async(req,res) =>{
         })
         
     }catch(error){
-        res.status(500).json({
+        const { status, message } = handleMongoError(error);
+        res.status(status).json({
             success:false,
-            message:error.message
+            message:message
         })
     }
 }
@@ -112,7 +123,7 @@ const updateTask = async(req,res) =>{
 const deleteTask = async(req,res) =>{
     try{
         const { id } = req.params;
-        
+
         const deletedTask = await Task.findByIdAndDelete(id);
         if(!deletedTask){
             return res.status(404).json({
@@ -128,9 +139,10 @@ const deleteTask = async(req,res) =>{
         })
 
     }catch(error){
-        res.status(500).json({
+        const { status, message } = handleMongoError(error);
+        res.status(status).json({
             success:false,
-            message:error.message
+            message:message
         })
     }
 }

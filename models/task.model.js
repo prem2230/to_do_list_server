@@ -3,7 +3,9 @@ import mongoose from "mongoose";
 const taskSchema = new mongoose.Schema({
     name:{
         type:String,
-        required:true
+        required: [true, 'Task name is required'],
+        minlength: [1, 'Task name cannot be empty'],
+        maxlength: [200, 'Task name cannot exceed 200 characters']
     },
     completed:{
         type:Boolean,
@@ -13,6 +15,10 @@ const taskSchema = new mongoose.Schema({
 {
     timestamps:true
 });
+
+taskSchema.index({ createdAt: -1 });
+taskSchema.index({ completed: 1 });
+taskSchema.index({ name: 'text' });
 
 const Task = mongoose.model('Task',taskSchema);
 export default Task;
