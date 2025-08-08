@@ -13,7 +13,31 @@ const limiter = rateLimit({
     message: 'Too many requests, please try again later.'
 });
 
+app.use((req, res, next) => {
+    if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
+        const contentType = req.get('Content-Type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return res.status(400).json({
+                success: false,
+                message: 'Content-Type must be application/json'
+            });
+        }
+    }
+    next();
+});
+
 app.use(express.json());
+
+app.use((error, req, res, next) => {
+    if (error instanceof SyntaxError && error.status === 400 && 'body' in error) {
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid JSON format in request body'
+        });
+    }
+    next(error);
+});
+
 app.use('/api/', limiter);
 
 const PORT = process.env.PORT || 3000;

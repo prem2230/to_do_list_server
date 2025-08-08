@@ -5,6 +5,20 @@ const addTask = async (req, res) => {
     try {
         const { name, completed } = req.body;
 
+           if (name !== undefined && typeof name !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: "Task name must be a string"
+            });
+        }
+
+        if (completed !== undefined && typeof completed !== 'boolean') {
+            return res.status(400).json({
+                success: false,
+                message: "Completed field must be a boolean"
+            });
+        }
+
         const task = new Task({
             name: name?.trim(),
             completed: completed || false
@@ -28,8 +42,12 @@ const addTask = async (req, res) => {
 
 const getTasks = async (req,res) =>{
     try{
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        let page = parseInt(req.query.page) || 1;
+        let limit = parseInt(req.query.limit) || 10;
+        
+        page = Math.max(1, page);  // Minimum page = 1
+        limit = Math.max(1, Math.min(100, limit));  // Limit between 1-100
+        
         const skip = (page - 1) * limit;
 
         const tasks = await Task.find().skip(skip).limit(limit).sort({ createdAt: -1 });
@@ -46,7 +64,7 @@ const getTasks = async (req,res) =>{
             success:true,
             message:"Tasks fetched successfully",
             data:tasks,
-            count:total,
+            count:tasks.length,
             pagination:{
                 currentPage: page,
                 totalPages: Math.ceil(total / limit),
