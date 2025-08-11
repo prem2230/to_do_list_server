@@ -44,27 +44,34 @@ const getTasks = async (req,res) =>{
     try{
         let page = parseInt(req.query.page) || 1;
         let limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search?.trim();
         
         page = Math.max(1, page);  // Minimum page = 1
         limit = Math.max(1, Math.min(100, limit));  // Limit between 1-100
         
         const skip = (page - 1) * limit;
 
-        const tasks = await Task.find().skip(skip).limit(limit).sort({ createdAt: -1 });
-        const total = await Task.countDocuments();
+        let query = {};
+        if(search){
+            query = {name: { $regex: search, $options: 'i' }}
+        }
+
+        const tasks = await Task.find(query).skip(skip).limit(limit).sort({ createdAt: -1 });
+        const total = await Task.countDocuments(query);
 
         if(tasks.length === 0){
             return res.status(404).json({
                 success:false,
-                message:"No tasks found"
+                message: search ? "No tasks found matching your search" : "No tasks found"
             })
         }
 
         res.status(200).json({
             success:true,
-            message:"Tasks fetched successfully",
+            message: search ? `Found ${tasks.length} tasks matching "${search}"` : "Tasks fetched successfully",
             data:tasks,
             count:tasks.length,
+            searchQuery: search || null,
             pagination:{
                 currentPage: page,
                 totalPages: Math.ceil(total / limit),
