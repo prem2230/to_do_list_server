@@ -1,6 +1,7 @@
 import express from 'express';
 import { configDotenv } from 'dotenv';
 import taskRouter from './routes/task.route.js';
+import userRouter from './routes/user.route.js';
 import connectDB from './utils/database.js';
 import rateLimit from 'express-rate-limit';
 
@@ -45,6 +46,7 @@ const PORT = process.env.PORT || 3000;
 connectDB()
 
 app.use('/api/v1',taskRouter);
+app.use('/api/v1',userRouter);
 
 app.use((req, res) => {
     res.status(404).json({

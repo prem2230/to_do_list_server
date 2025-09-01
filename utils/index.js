@@ -1,10 +1,37 @@
 export const handleMongoError = (error) => {
     if(error.code === 11000) {
-        return { status: 400, message: "Task already exists"}
+        const field = Object.keys(error.keyValue)[0];
+        if(field === 'email') {
+            return { status: 400, message: "Email already exists"};
+        }
+        if(field === 'username') {
+            return { status: 400, message: "Username already exists"};
+        }
+        if(field === 'name') {
+            return { status: 400, message: "Task already exists"}
+        }
+        return { status: 400, message: `Duplicate value for ${field} field`};
     }
 
     if(error.name === "ValidationError") {
-        const errors = Object.values(error.errors).map((err) => err.message);
+        const errors = Object.values(error.errors).map((err) =>  {
+            if(err.kind === 'required') {
+                return `${err.path} is required`;
+            }
+            if(err.kind === 'minlength') {
+                return `${err.path} must be at least ${err.properties.minlength} characters`;
+            }
+            if(err.kind === 'maxlength') {
+                return `${err.path} cannot exceed ${err.properties.maxlength} characters`;
+            }
+            if(err.kind === 'regexp' && err.path === 'email') {
+                return "Please provide a valid email address";
+            }
+            if(err.kind === 'enum') {
+                return `${err.path} must be one of: ${err.properties.enumValues.join(', ')}`;
+            }
+            return err.message;
+        });
         return { status: 400, message: errors.join(", ")};
     }
 
