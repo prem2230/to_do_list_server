@@ -105,10 +105,27 @@ const loginUser = async (req, res) => {
             { expiresIn: '1h' }
         );
 
+        const refreshToken = jwt.sign(
+            {
+                id: user._id,
+                username: user.username,
+                type : 'refresh'
+            },
+            process.env.REFRESH_KEY,
+            { expiresIn: '7d' }
+        );
+
+        user.refreshTokens.push({
+            token: refreshToken,
+            expiresAt: new Date(Date.now() + 7*24*60*60*1000) // 7 days
+        });
+        await user.save();
+
         return res.status(200).json({
             success:true,
             message:"Login successful",
             token:token,
+            refreshToken: refreshToken,
             data:{
                 id: user._id,
                 username: user.username,
@@ -125,4 +142,28 @@ const loginUser = async (req, res) => {
     }
 }
 
-export { registerUser, loginUser };
+const getUser = async( req, res) => {
+    try{
+        const user = req.user;
+
+        res.status(200).json({
+            success:true,
+            message:"User details fetched successfully",
+            user:{
+                id: user._id,
+                username: user.username,
+                email: user.email
+            }
+        });
+
+    }catch(error){
+        const { status, message } = handleMongoError(error);
+        res.status(status).json({
+            success:false,
+            message:message
+        });
+
+    }
+}
+
+export { registerUser, loginUser, getUser };
