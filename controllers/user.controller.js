@@ -15,7 +15,6 @@ const registerUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log(hashedPassword);
 
         const newUser = new User({ 
             username, 

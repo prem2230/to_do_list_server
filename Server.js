@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import { configDotenv } from 'dotenv';
 import taskRouter from './routes/task.route.js';
 import userRouter from './routes/user.route.js';
@@ -7,6 +8,13 @@ import rateLimit from 'express-rate-limit';
 
 const app = express();
 configDotenv();
+
+app.use(cors());
+
+// app.use(cors({
+//     origin: ['http://XXXXXXXXXXXXXX', 'XXXXXXXXXXXXXXXXXXXXX'],
+//     credentials: true,
+// }))
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
