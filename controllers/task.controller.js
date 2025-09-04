@@ -3,12 +3,19 @@ import { handleMongoError } from "../utils/index.js";
 
 const addTask = async (req, res) => {
     try {
-        const { name, completed } = req.body;
+        const { title, description, completed, priority, dueDate } = req.body;
 
-           if (name !== undefined && typeof name !== 'string') {
+           if (title !== undefined && typeof title !== 'string') {
             return res.status(400).json({
                 success: false,
                 message: "Task name must be a string"
+            });
+        }
+
+        if (description !== undefined && typeof description !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: "Description must be a string"
             });
         }
 
@@ -19,9 +26,27 @@ const addTask = async (req, res) => {
             });
         }
 
+        if (priority !== undefined && !['low', 'medium', 'high'].includes(priority)) {
+            return res.status(400).json({
+                success: false,
+                message: "Priority must be one of 'low', 'medium', or 'high'"
+            });
+        }
+
+        if (dueDate !== undefined && !(dueDate instanceof Date)) {
+            return res.status(400).json({
+                success: false,
+                message: "Due date must be a valid date"
+            });
+        }
+
+
         const task = new Task({
-            name: name?.trim(),
-            completed: completed || false
+            title: title?.trim(),
+            description: description?.trim(),
+            completed: completed || false,
+            priority: priority || 'medium',
+            dueDate: dueDate || null
         })
         await task.save();
 
@@ -53,7 +78,7 @@ const getTasks = async (req,res) =>{
 
         let query = {};
         if(search){
-            query = {name: { $regex: search, $options: 'i' }}
+            query = {title: { $regex: search, $options: 'i' }}
         }
 
         const tasks = await Task.find(query).skip(skip).limit(limit).sort({ createdAt: -1 });
@@ -120,9 +145,9 @@ const getTask = async(req,res) =>{
 const updateTask = async(req,res) =>{
     try{
         const { id } = req.params;
-        const { name, completed } = req.body;
+        const { title, description, completed, priority, dueDate } = req.body;
 
-        const updatedTask = await Task.findByIdAndUpdate(id, { name, completed }, { new: true });
+        const updatedTask = await Task.findByIdAndUpdate(id, { title, description, completed, priority, dueDate }, { new: true });
         if(!updatedTask){
             return res.status(404).json({
                 success:false,
