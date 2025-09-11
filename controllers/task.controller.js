@@ -33,12 +33,12 @@ const addTask = async (req, res) => {
             });
         }
 
-        if (dueDate !== undefined && !(dueDate instanceof Date)) {
-            return res.status(400).json({
-                success: false,
-                message: "Due date must be a valid date"
-            });
-        }
+        // if (dueDate !== undefined && !(dueDate instanceof Date)) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "Due date must be a valid date"
+        //     });
+        // }
 
 
         const task = new Task({
@@ -83,6 +83,7 @@ const getTasks = async (req,res) =>{
 
         const tasks = await Task.find(query).skip(skip).limit(limit).sort({ createdAt: -1 });
         const total = await Task.countDocuments(query);
+        const completedCount = await Task.countDocuments({ ...query , completed: true });
 
         if(tasks.length === 0){
             return res.status(404).json({
@@ -101,6 +102,7 @@ const getTasks = async (req,res) =>{
                 currentPage: page,
                 totalPages: Math.ceil(total / limit),
                 totalTasks: total,
+                completedCount: completedCount,
                 hasNext: page < Math.ceil(total / limit),
                 hasPrev: page > 1
             }
