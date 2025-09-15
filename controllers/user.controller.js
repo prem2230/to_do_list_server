@@ -108,7 +108,7 @@ const loginUser = async (req, res) => {
                 email: user.email
             },
             process.env.SECRET_KEY,
-            { expiresIn: '20s' }
+            { expiresIn: '1h' }
         );
 
         const refreshToken = jwt.sign(
@@ -118,7 +118,7 @@ const loginUser = async (req, res) => {
                 type : 'refresh'
             },
             process.env.REFRESH_KEY,
-            { expiresIn: '40s' }
+            { expiresIn: '7d' }
         );
 
         user.refreshTokens.push({
@@ -197,7 +197,7 @@ const refreshToken = async (req, res) => {
         const newToken = jwt.sign(
             { id: user._id, username: user.username, email: user.email },
             process.env.SECRET_KEY,
-            { expiresIn: '10s' }
+            { expiresIn: '1h' }
         );
 
         res.status(200).json({
