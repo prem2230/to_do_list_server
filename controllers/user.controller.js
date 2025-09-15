@@ -7,6 +7,13 @@ const registerUser = async (req, res) => {
     try{
         const { username, email, password, confirmPassword } = req.body;
 
+        if(!password || !confirmPassword){
+            return res.status(400).json({
+                success:false,
+                message:"Please provide password and confirm password"
+            });
+        }
+
         if(password !== confirmPassword){
             return res.status(400).json({
                 success:false,
@@ -26,7 +33,7 @@ const registerUser = async (req, res) => {
         res.status(201).json({
             success:true,
             message:"User registered successfully",
-            data:{
+            user:{
                 id: newUser._id,
                 username: newUser.username,
                 email: newUser.email
@@ -101,7 +108,7 @@ const loginUser = async (req, res) => {
                 email: user.email
             },
             process.env.SECRET_KEY,
-            { expiresIn: '1h' }
+            { expiresIn: '20s' }
         );
 
         const refreshToken = jwt.sign(
@@ -111,7 +118,7 @@ const loginUser = async (req, res) => {
                 type : 'refresh'
             },
             process.env.REFRESH_KEY,
-            { expiresIn: '7d' }
+            { expiresIn: '40s' }
         );
 
         user.refreshTokens.push({
@@ -125,7 +132,7 @@ const loginUser = async (req, res) => {
             message:"Login successful",
             token:token,
             refreshToken: refreshToken,
-            data:{
+            user:{
                 id: user._id,
                 username: user.username,
                 email: user.email
@@ -133,6 +140,7 @@ const loginUser = async (req, res) => {
         });
 
     }catch(error){
+        console.log(error)
         const { status, message } = handleMongoError(error);
         res.status(status).json({
             success:false,
@@ -165,4 +173,44 @@ const getUser = async( req, res) => {
     }
 }
 
-export { registerUser, loginUser, getUser };
+const refreshToken = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        
+        if (!refreshToken) {
+            return res.status(401).json({
+                success: false,
+                message: "Refresh token required"
+            });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.REFRESH_KEY);
+        const user = await User.findById(decoded.id);
+        
+        if (!user || !user.refreshTokens.some(rt => rt.token === refreshToken)) {
+            return res.status(403).json({
+                success: false,
+                message: "Invalid refresh token"
+            });
+        }
+
+        const newToken = jwt.sign(
+            { id: user._id, username: user.username, email: user.email },
+            process.env.SECRET_KEY,
+            { expiresIn: '10s' }
+        );
+
+        res.status(200).json({
+            success: true,
+            token: newToken
+        });
+
+    } catch (error) {
+        res.status(403).json({
+            success: false,
+            message: "Invalid refresh token"
+        });
+    }
+}
+
+export { registerUser, loginUser, getUser, refreshToken };
