@@ -70,6 +70,7 @@ const getTasks = async (req,res) =>{
         let page = parseInt(req.query.page) || 1;
         let limit = parseInt(req.query.limit) || 10;
         const search = req.query.search?.trim();
+        const priority = req.query.priority?.trim();
         
         page = Math.max(1, page);  // Minimum page = 1
         limit = Math.max(1, Math.min(100, limit));  // Limit between 1-100
@@ -79,6 +80,10 @@ const getTasks = async (req,res) =>{
         let query = {};
         if(search){
             query = {title: { $regex: search, $options: 'i' }}
+        }
+
+        if(priority && ['low', 'medium', 'high'].includes(priority)){
+            query.priority = priority;
         }
 
         const tasks = await Task.find(query).skip(skip).limit(limit).sort({ createdAt: -1 });
@@ -97,7 +102,10 @@ const getTasks = async (req,res) =>{
             message: search ? `Found ${tasks.length} tasks matching "${search}"` : "Tasks fetched successfully",
             data:tasks,
             count:tasks.length,
-            searchQuery: search || null,
+            filters:{
+                search: search || null,
+                priority: priority || null
+            },
             pagination:{
                 currentPage: page,
                 totalPages: Math.ceil(total / limit),

@@ -33,6 +33,7 @@ const taskSchema = new mongoose.Schema({
 taskSchema.index({ createdAt: -1 });
 taskSchema.index({ completed: 1 });
 taskSchema.index({ title: 'text' });
+taskSchema.index({ priority: 1 });
 
 const Task = mongoose.model('Task',taskSchema);
 export default Task;
