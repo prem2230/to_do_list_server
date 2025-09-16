@@ -22,6 +22,12 @@ const limiter = rateLimit({
     message: 'Too many requests, please try again later.'
 });
 
+if (!process.env.SECRET_KEY || !process.env.MONGO_URI || !process.env.REFRESH_KEY) {
+    console.error('Missing required environment variables');
+    console.log('Shutting down the server.');
+    process.exit(1);
+}
+
 app.use((req, res, next) => {
     if (['POST', 'PUT', 'PATCH'].includes(req.method)) {
         const contentType = req.get('Content-Type');
